@@ -25,7 +25,11 @@ end
 
 Flux.@functor NNModel
 
+"""
+    NNModel(input_size::Int, ode_size::Int, output_size::Int)
 
+Create a NNModel with the given input, hidden and output size.
+"""
 function NNModel(input_size::Int, ode_size::Int, output_size::Int)
     input = Chain(Dense(input_size, ode_size))
     hidden = Chain(Dense(ode_size, 32, tanh), Dense(32, ode_size))#, Dense(100,hidden_size, tanh))
@@ -33,39 +37,50 @@ function NNModel(input_size::Int, ode_size::Int, output_size::Int)
     NNModel(input, hidden, output)
 end
 
+"""
+    (m::NNModel)(datapoints)
 
+Functor to apply the NNModel to the given datapoints.
+"""
 function (m::NNModel)(datapoints)
     
     return m.output(m.hidden(m.input(datapoints)))
 
 end
 
+
+"""
+    accuracy(y_true, y_pred, tolerance)
+
+Return the accuracy of the prediction.
+"""
 function accuracy(y_true, y_pred, tolerance)
     correct = sum(abs.(y_true .- y_pred) .<= tolerance)
     return correct / length(y_true)
 end
 
 
+"""
+    train_step!(environment::ContinuousEnvironment, S, A, R, S´, T, fθ, model_opt)
 
-#function train_step!(S, A, R, S´, T, fθ, Rϕ, model_opt, reward_opt)
+Train the continuous action model on gradient descent.
+"""
 function train_step!(environment::ContinuousEnvironment, S, A, R, S´, T, fθ, model_opt)
 
     X = vcat(S, A)
-
-    # Train both critic networks
 
     sum(T[1:(end-1)]) > 0 && return
 
     dθ = Flux.gradient(m -> Flux.Losses.mse(m(X), S´), fθ)
     Flux.update!(model_opt, fθ, dθ[1])
     
-    # dϕ = Flux.gradient(m -> Flux.Losses.mse(m(vcat(S, A, S´)), hcat(R...)), Rϕ)
-    # Flux.update!(reward_opt, Rϕ, dϕ[1])
-
-
 end
 
+"""
+    train_step!(environment::DiscreteEnvironment, S, A, R, S´, T, fθ, model_opt, ep::EnvParameter)
 
+Train the discrete action model on gradient descent.
+"""
 function train_step!(environment::DiscreteEnvironment, S, A, R, S´, T, fθ, model_opt, ep::EnvParameter)
 
     X = vcat(S, onehotbatch(vcat(A...), ep.labels))
@@ -78,14 +93,14 @@ function train_step!(environment::DiscreteEnvironment, S, A, R, S´, T, fθ, mod
     dθ = Flux.gradient(m -> Flux.Losses.mse(m(X), S´), fθ)
     Flux.update!(model_opt, fθ, dθ[1])
     
-    # dϕ = Flux.gradient(m -> Flux.Losses.mse(m(vcat(S, A, S´)), hcat(R...)), Rϕ)
-    # Flux.update!(reward_opt, Rϕ, dϕ[1])
-
-
 end
 
 
+"""
+    modelEnv(environment::ContinuousEnvironment, modelParams::ModelParameter)
 
+Main model training algorithm.
+"""
 function modelEnv(environment::ContinuousEnvironment, modelParams::ModelParameter)
 
     gym = pyimport("gymnasium")
@@ -210,6 +225,11 @@ function modelEnv(environment::ContinuousEnvironment, modelParams::ModelParamete
 end
 
 
+"""
+    train_step!(environment::DiscreteEnvironment, S, A, R, S´, T, fθ, model_opt, ep::EnvParameter)
+
+Main algorithm to train the discrete action model.
+"""
 function modelEnv(environment::DiscreteEnvironment, modelParams::ModelParameter)
 
     gym = pyimport("gymnasium")
