@@ -196,6 +196,7 @@ function modelEnv(environment::ContinuousEnvironment, modelParams::ModelParamete
 
         if j % modelParams.store_frequency == 0
             
+            # Debugging Output
             # S, A, R, S´, T = sample(test_buffer, ModelMethod(), modelParams.trajectory)
             # sum(T[1:(end-1)]) > 0 && continue
             # X = vcat(S, A)
@@ -326,6 +327,7 @@ function modelEnv(environment::DiscreteEnvironment, modelParams::ModelParameter)
 
         if j % modelParams.store_frequency == 0
             
+            # Debugging output
             # S, A, R, S´, T = sample(test_buffer, ModelMethod(), modelParams.trajectory)
             # sum(T[1:(end-1)]) > 0 && continue
             # timestamps = Float32[i for i in 1:length(T)]
